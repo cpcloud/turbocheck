@@ -13,16 +13,21 @@ use vax_site::Area;
 
 #[derive(Debug, structopt::StructOpt)]
 struct Opt {
-    /// Boroughs/regions to look for appointments in. Not specifying this argument searches all areas.
+    /// Boroughs/regions to look for appointments in.
+    ///
+    /// Not specifying this argument searches all areas.
     #[structopt(long, possible_values = Area::VARIANTS)]
     area: Vec<Area>,
 
     /// Pattern of text to use for searching site names.
+    ///
+    /// Not specifying this argument results in *no* filter, i.e., all sites are displayed.
     #[structopt(long)]
     site_pattern: Option<regex::Regex>,
 
-    /// Optional Twilio configuration. If this argument isn't provided,
-    /// then text messaging functionality will be disabled.
+    /// Optional Twilio configuration.
+    ///
+    /// If this argument isn't provided, then text messaging functionality will be disabled.
     #[structopt(long)]
     twilio_config: Option<PathBuf>,
 
@@ -34,7 +39,7 @@ struct Opt {
     )]
     time_between_requests: Duration,
 
-    /// Logging verbosity
+    /// Verbosity of logs.
     #[structopt(long, default_value = "INFO")]
     log_level: tracing_subscriber::filter::LevelFilter,
 }
