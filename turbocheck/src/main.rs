@@ -13,7 +13,7 @@ use vax_site::Area;
 
 #[derive(Debug, structopt::StructOpt)]
 struct Opt {
-    /// Boroughs/regions to look for appointments in. Passing no area argument searches all areas.
+    /// Boroughs/regions to look for appointments in. Not specifying this argument searches all areas.
     #[structopt(long, possible_values = Area::VARIANTS)]
     area: Vec<Area>,
 
@@ -21,12 +21,12 @@ struct Opt {
     #[structopt(long)]
     site_pattern: Option<regex::Regex>,
 
-    /// Optional twilio configuration. If this argument isn't provided,
+    /// Optional Twilio configuration. If this argument isn't provided,
     /// then text messaging functionality will be disabled.
     #[structopt(long)]
     twilio_config: Option<PathBuf>,
 
-    /// The time to wait between requests.
+    /// The time to wait between requests to TurboVax.
     #[structopt(
         long,
         default_value = "1s",
