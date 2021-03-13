@@ -51,7 +51,9 @@ async fn main() -> anyhow::Result<()> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer().with_timer(
-                tracing_subscriber::fmt::time::ChronoUtc::with_format("%Y-%m-%dT%H:%M:%S%.3f".into()),
+                tracing_subscriber::fmt::time::ChronoUtc::with_format(
+                    "%Y-%m-%dT%H:%M:%S%.3f".into(),
+                ),
             ))
             .with(log_level),
     )?;
