@@ -67,7 +67,7 @@ $ cargo run --release
 $ cargo run --release -- --area manhattan
 ```
 
-### Search for appointments in Queens whose site's name contains "hospital" or "Hospital"
+### Search for appointments in Queens whose site name contains "hospital" or "Hospital"
 
 ```
 $ cargo run --release -- --area queens --site-pattern="[hH]ospital"
