@@ -81,7 +81,7 @@ impl TurboxVaxClient {
             .map_err(Error::GetShortUrl)
     }
 
-    #[instrument(name = "TurboxVaxClient::check_availability", skip(self))]
+    #[instrument(name = "TurboxVaxClient::check_availability", skip(self), level = "debug")]
     pub(crate) async fn check_availability(&mut self) -> Result<(), Error> {
         let areas = self.areas;
         for Site {
