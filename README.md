@@ -2,8 +2,8 @@
 
 ## What is this?
 
-`turbocheck` is a command line tool for monitoring COVID-19 vaccination
-appointments in the New York metropolitan area.
+`turbocheck` is a command line tool for continuously monitoring COVID-19
+vaccination appointments in the New York metropolitan area.
 
 It uses data from https://turbovax.info to display terminal output with
 appointment information (straight from TurboVax), including a Google Maps link
@@ -38,13 +38,16 @@ It will also output a log message when a site has no more available appointments
 
 ### With `nix`
 
-1. Run `nix-shell` in a clone of this repository
+1. Install `nix` (https://nixos.org/guides/install-nix.html).
+1. Run `nix-shell` in a clone of this repository.
+
+This will take a few minutes to complete.
 
 ### Without `nix`
 
-1. Install Rust (https://www.rust-lang.org/tools/install)
-1. Install `pkg-config` using your favorite package manager
-1. Install OpenSSL using your favorite package manager
+1. Install Rust (https://www.rust-lang.org/tools/install).
+1. Install `pkg-config` using your favorite package manager.
+1. Install OpenSSL using your favorite package manager.
 
 ## How do I use the application?
 
@@ -84,3 +87,7 @@ auth_token = "<your twilio auth token>"
 EOF
 $ cargo run --release -- --area=queens --site-pattern="[hH]ospital" --twilio-config=/tmp/twilio.toml
 ```
+
+## Thank You
+
+Thank you to Huge Ma for building TurboVax.
