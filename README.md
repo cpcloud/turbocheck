@@ -2,13 +2,37 @@
 
 ## What is this?
 
-`turbocheck` is a command line tool for monitoring COVID-19 vaccination appointments.
+`turbocheck` is a command line tool for monitoring COVID-19 vaccination
+appointments in the New York metropolitan area.
 
 It uses data from https://turbovax.info to display terminal output with
 appointment information (straight from TurboVax), including a Google Maps link
 to the appointment site.
 
-It will also output a log message a site has no more available appointments.
+Here's an example of some terminal output when an appointment is found:
+
+```
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: ------------------------------ BEGIN -------------------------------
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: 2021-03-13 14:27:34 -05:00 Manhattan: appointments available!
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax:
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Site: Harlem Hospital
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax:
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Area: Manhattan
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Sched: https://covid19.nychealthandhospitals.org/COVIDVaxEligibility
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Map: https://is.gd/wQ2JVQ
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax:
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Times: Mar 13 – 3:10PM, 3:20PM, 3:30PM + 1
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax:
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Appts Remaining: 4
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: Last Updated: 2021-03-13 14:27:34 -05:00
+Mar 13 14:27:35.006  INFO TurboxVaxClient::check_availability: turbocheck::turbovax: ------------------------------- END --------------------------------
+```
+
+It will also output a log message when a site has no more available appointments:
+
+```
+Mar 13 13:55:21.367  WARN TurboxVaxClient::check_availability: turbocheck::turbovax: 2021-03-13 13:54:50 -05:00 Brooklyn: Kings County Hospital appts no longer available
+```
 
 ## What dependencies do I need?
 
@@ -20,7 +44,7 @@ It will also output a log message a site has no more available appointments.
 
 1. Install Rust (https://www.rust-lang.org/tools/install)
 1. Install `pkg-config` using your favorite package manager
-1. Install openssl using your favorite package manager
+1. Install OpenSSL using your favorite package manager
 
 ## How do I use the application?
 
@@ -45,7 +69,6 @@ $ cargo run --release -- --area manhattan
 ```
 $ cargo run --release -- --area queens --site-pattern="[hH]ospital"
 ```
-
 
 ### Send a text message with the appointment details using Twilio
 
