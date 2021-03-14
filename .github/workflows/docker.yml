@@ -21,5 +21,17 @@ jobs:
       - name: Load the image into Docker
         run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
 
+      - name: Create a temporary Dockerfile
+        run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheck-image.imageTag)" > Dockerfile
+
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v2
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: turbocheck/turbocheck
+          tag_with_ref: true
+
       - name: Show the image
         run: docker images
