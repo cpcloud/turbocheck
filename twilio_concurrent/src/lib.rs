@@ -1,5 +1,5 @@
 use futures::{stream::FuturesUnordered, StreamExt};
-use std::{collections::HashSet, iter::FromIterator};
+use std::collections::HashSet;
 use tracing::{debug, instrument};
 
 #[derive(Debug, serde::Deserialize)]
@@ -43,14 +43,18 @@ impl Client {
         );
 
         // send appointment availabilty information to all specified phone numbers concurrently
-        let mut text_msg_futures = FuturesUnordered::from_iter(self.sms_to.iter().map(|sms_to| {
-            debug!(message = "sending", sms_to = sms_to.as_str());
-            self.client
-                .post(&url)
-                .basic_auth(&self.account_sid, Some(&self.auth_token))
-                .form(&[("Body", message), ("From", &self.sms_from), ("To", sms_to)])
-                .send()
-        }));
+        let mut text_msg_futures = self
+            .sms_to
+            .iter()
+            .map(|sms_to| {
+                debug!(message = "sending", sms_to = sms_to.as_str());
+                self.client
+                    .post(&url)
+                    .basic_auth(&self.account_sid, Some(&self.auth_token))
+                    .form(&[("Body", message), ("From", &self.sms_from), ("To", sms_to)])
+                    .send()
+            })
+            .collect::<FuturesUnordered<_>>();
 
         while let Some(result_response) = text_msg_futures.next().await {
             let response = result_response?;
