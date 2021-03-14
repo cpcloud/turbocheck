@@ -21,17 +21,24 @@ jobs:
       - name: Load the image into Docker
         run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
 
+      - name: Set up Docker Buildx
+        run: docker/setup-buildx-action@v1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
       - name: Create a temporary Dockerfile
         run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheck-image.imageTag)" > Dockerfile
 
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: turbocheck/turbocheck
-          tag_with_ref: true
+          context: .
+          tags: ghcr.io/turbocheck/turbocheck:latest
 
       - name: Show the image
         run: docker images
