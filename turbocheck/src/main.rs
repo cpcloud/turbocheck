@@ -4,6 +4,8 @@ use structopt::StructOpt;
 use strum::VariantNames;
 use tracing::{debug, error, info};
 use tracing_subscriber::layer::SubscriberExt;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 mod error;
 mod turbovax;
@@ -93,7 +95,14 @@ async fn main() -> anyhow::Result<()> {
         })
         .build();
 
-    loop {
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = running.clone();
+
+    ctrlc::set_handler(move || {
+        running_clone.store(false, Ordering::SeqCst);
+    })?;
+
+    while running.load(Ordering::SeqCst) {
         if let Err(error) = client.check_availability().await {
             error!(?error);
         }
@@ -101,4 +110,5 @@ async fn main() -> anyhow::Result<()> {
         debug!(message = "sleep", ?time_between_requests);
         tokio::time::sleep(time_between_requests).await;
     }
+    Ok(())
 }
