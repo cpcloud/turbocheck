@@ -19,7 +19,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Create a temporary Dockerfile
-        run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheck-image.imageTag)" > Dockerfile
+        run: echo "FROM turbocheck:latest" > Dockerfile
 
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
@@ -48,5 +48,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
+          cache-from: turbocheck:latest
           push: true
           tags: ghcr.io/cpcloud/turbocheck:latest
