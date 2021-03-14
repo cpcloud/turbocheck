@@ -18,6 +18,9 @@ rec {
     name = "turbocheck";
     config = {
       Entrypoint = [ "${turbocheck}/bin/turbocheck" ];
+      Env = [
+        "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+      ];
     };
   };
 }
