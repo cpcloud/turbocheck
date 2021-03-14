@@ -48,6 +48,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          cache-from: turbocheck:latest
+          no-cache: true
           push: true
           tags: ghcr.io/cpcloud/turbocheck:latest
