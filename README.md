@@ -34,22 +34,9 @@ It will also output a log message when a site has no more available appointments
 2021-03-13 13:54:50 -05:00 Brooklyn: Kings County Hospital appts no longer available
 ```
 
-## What dependencies do I need?
-
-### With `nix`
-
-1. Install `nix` (https://nixos.org/guides/install-nix.html).
-1. Run `nix-shell` in a clone of this repository.
-
-This will take a few minutes to complete.
-
-### Without `nix`
-
-1. Install Rust (https://www.rust-lang.org/tools/install).
-1. Install `pkg-config` using your favorite package manager.
-1. Install OpenSSL using your favorite package manager.
-
 ## How do I use the application?
+
+You can run the application using Docker. Keep reading for usage examples.
 
 By default, `turbocheck` will log appointment details to your terminal, but it is
 also capable of sending any number of phone numbers an SMS message for each
@@ -58,19 +45,19 @@ appointment that shows up.
 ### Search for appointments in all of NYC plus Long Island and some upstate areas
 
 ```
-$ cargo run --release
+$ docker run --rm cpcloud86/turbocheck
 ```
 
 ### Search for appointments in Manhattan
 
 ```
-$ cargo run --release -- --area manhattan
+$ docker run --rm cpcloud86/turbocheck --area manhattan
 ```
 
 ### Search for appointments in Queens whose site name contains "hospital" or "Hospital"
 
 ```
-$ cargo run --release -- --area queens --site-pattern="[hH]ospital"
+$ docker run --rm cpcloud86/turbocheck --area queens --site-pattern="[hH]ospital"
 ```
 
 ### Send a text message with the appointment details using Twilio
@@ -85,8 +72,26 @@ sms_to = [
 account_sid = "<your twilio account sid>"
 auth_token = "<your twilio auth token>"
 EOF
-$ cargo run --release -- --area=queens --site-pattern="[hH]ospital" --twilio-config=/tmp/twilio.toml
+$ docker run --rm cpcloud86/turbocheck \
+  --area=queens \
+  --site-pattern="[hH]ospital" \
+  --twilio-config=/tmp/twilio.toml
 ```
+
+## What development dependencies do I need?
+
+### With `nix`
+
+1. Install `nix` (https://nixos.org/guides/install-nix.html).
+1. Run `nix-shell` in a clone of this repository.
+
+This will take a few minutes to complete.
+
+### Without `nix`
+
+1. Install Rust (https://www.rust-lang.org/tools/install).
+1. Install `pkg-config` using your favorite package manager.
+1. Install OpenSSL using your favorite package manager.
 
 ## Thank You
 
