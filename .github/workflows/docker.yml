@@ -16,4 +16,10 @@ jobs:
         uses: cachix/install-nix-action@v12
 
       - name: Build the Docker image using Nix
-        run: nix build -L -f. turbocheck-image
+        run: nix build -L -f. turbocheck-image --no-link
+
+      - name: Load the image into Docker
+        run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
+
+      - name: Show the image
+        run: docker images

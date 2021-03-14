@@ -5,7 +5,7 @@ let
       (import sources.nixpkgs-mozilla)
       (import ./nix/overlays/rust.nix)
       (self: super: {
-        rustc = super.rustc.override {
+        rustc = super.rustChannel.rust.override {
           extensions = [
             "clippy-preview"
             "rls-preview"
