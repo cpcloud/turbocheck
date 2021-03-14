@@ -15,14 +15,8 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v12
 
-      - name: Build the Docker image using Nix
-        run: nix build -L -f. turbocheck-image --no-link
-
-      - name: Load the image into Docker
-        run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
-
       - name: Set up Docker Buildx
-        run: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v1
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
@@ -30,6 +24,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
+
+      - name: Build the Docker image using Nix
+        run: nix build -L -f. turbocheck-image --no-link
+
+      - name: Load the image into Docker
+        run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
 
       - name: Create a temporary Dockerfile
         run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheck-image.imageTag)" > Dockerfile
@@ -39,6 +39,3 @@ jobs:
         with:
           context: .
           tags: ghcr.io/turbocheck/turbocheck:latest
-
-      - name: Show the image
-        run: docker images
