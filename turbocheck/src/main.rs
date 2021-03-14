@@ -1,11 +1,17 @@
 use enumset::EnumSet;
-use std::{iter::FromIterator, path::PathBuf, time::Duration};
+use std::{
+    iter::FromIterator,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 use structopt::StructOpt;
 use strum::VariantNames;
 use tracing::{debug, error, info};
 use tracing_subscriber::layer::SubscriberExt;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 mod error;
 mod turbovax;
