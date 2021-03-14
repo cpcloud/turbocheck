@@ -30,8 +30,8 @@ jobs:
         uses: docker/build-push-action@v1
         with:
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: cpcloud/turbocheck/turbocheck
+          password: ${{ secrets.CR_PAT }}
+          registry: ghcr.io
+          repository: cpcloud/turbocheck
           tag_with_ref: true
           tag_with_sha: true
