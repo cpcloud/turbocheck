@@ -79,9 +79,14 @@ impl TurboxVaxClient {
                     .feed
                     .entries
                     .into_iter()
-                    .map(|entry| entry.content.site)
-                    .into_iter()
-                    .filter(move |site| site.is_active && areas.contains(site.area)),
+                    .filter_map(move |entry| {
+                        let site = entry.content.site;
+                        if site.is_active && areas.contains(site.area) {
+                            Some(site)
+                        } else {
+                            None
+                        }
+                    })
             );
         }
         Ok(iters.into_iter().flatten())
