@@ -53,11 +53,11 @@ struct Opt {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let Opt {
-        twilio_config,
         area,
-        log_level,
         site_pattern,
+        twilio_config,
         duration_between_requests,
+        log_level,
         log_timestamp_format,
     } = Opt::from_args();
 
