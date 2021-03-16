@@ -12,12 +12,11 @@ use structopt::StructOpt;
 use strum::VariantNames;
 use tracing::{debug, error, info};
 use tracing_subscriber::layer::SubscriberExt;
+use vax_site::Area;
 
 mod error;
 mod turbovax;
 mod vax_site;
-
-use vax_site::Area;
 
 #[derive(Debug, structopt::StructOpt)]
 struct Opt {
