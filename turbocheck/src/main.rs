@@ -21,19 +21,20 @@ mod vax_site;
 #[derive(Debug, structopt::StructOpt)]
 struct Opt {
     /// Boroughs/regions to look for appointments in. Not specifying this argument searches all areas.
-    #[structopt(long, possible_values = Area::VARIANTS)]
+    #[structopt(short, long, possible_values = Area::VARIANTS)]
     area: Vec<Area>,
 
     /// Pattern of text to use for searching site names. Not specifying this argument results in all sites being displayed.
-    #[structopt(long)]
+    #[structopt(short, long)]
     site_pattern: Option<regex::Regex>,
 
     /// Optional Twilio configuration. If this argument isn't provided, then text messaging functionality will be disabled.
-    #[structopt(long)]
+    #[structopt(short, long)]
     twilio_config: Option<PathBuf>,
 
     /// The time to wait between requests to TurboVax.
     #[structopt(
+        short,
         long,
         default_value = "1s",
         parse(try_from_str = humantime::parse_duration)
