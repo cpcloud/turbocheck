@@ -30,6 +30,8 @@ pub(crate) struct TurboxVaxClient {
 
     #[builder(default = Default::default())]
     site_pattern: Option<regex::Regex>,
+
+    data_uris: Vec<String>,
 }
 
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
@@ -61,7 +63,29 @@ fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), E
 }
 
 impl TurboxVaxClient {
-    const DATA_URI: &'static str = "https://spreadsheets.google.com/feeds/cells/1NNZJWI7BYlajdBcqkEpOXXq6EZZyMd-zSIGKHNgS99w/4/public/full?alt=json";
+    async fn unified_data(&self) -> Result<impl Iterator<Item = Site>, Error> {
+        let areas = self.areas;
+        let mut iters = vec![];
+        for uri in self.data_uris.iter().cloned() {
+            iters.push(
+                self.client
+                    .get(uri)
+                    .send()
+                    .await
+                    .map_err(Error::GetData)?
+                    .json::<Data>()
+                    .await
+                    .map_err(Error::ParseData)?
+                    .feed
+                    .entries
+                    .into_iter()
+                    .map(|entry| entry.content.site)
+                    .into_iter()
+                    .filter(move |site| site.is_active && areas.contains(site.area)),
+            );
+        }
+        Ok(iters.into_iter().flatten())
+    }
 
     fn get_maps_short_url(&self, site: &str) -> Result<String, Error> {
         self.url_shortener
@@ -87,7 +111,6 @@ impl TurboxVaxClient {
         level = "debug"
     )]
     pub(crate) async fn check_availability(&mut self) -> Result<(), Error> {
-        let areas = self.areas;
         for Site {
             site,
             url,
@@ -97,21 +120,7 @@ impl TurboxVaxClient {
             appointment_times,
             area,
             ..
-        } in self
-            .client
-            .get(Self::DATA_URI)
-            .send()
-            .await
-            .map_err(Error::GetData)?
-            .json::<Data>()
-            .await
-            .map_err(Error::ParseData)?
-            .feed
-            .entries
-            .into_iter()
-            .map(|entry| entry.content.site)
-            .into_iter()
-            .filter(move |site| site.is_active && areas.contains(site.area))
+        } in self.unified_data().await?
         {
             let desired_site = self
                 .site_pattern
