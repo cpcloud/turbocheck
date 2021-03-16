@@ -44,6 +44,10 @@ struct Opt {
     /// Verbosity of logs.
     #[structopt(long, default_value = "info")]
     log_level: tracing_subscriber::filter::EnvFilter,
+
+    /// Log timestamp format
+    #[structopt(long, default_value = "%Y-%m-%dT%H:%M:%S%.3f")]
+    log_timestamp_format: String,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -54,14 +58,13 @@ async fn main() -> anyhow::Result<()> {
         log_level,
         site_pattern,
         duration_between_requests,
+        log_timestamp_format,
     } = Opt::from_args();
 
     tracing::subscriber::set_global_default(
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer().with_timer(
-                tracing_subscriber::fmt::time::ChronoUtc::with_format(
-                    "%Y-%m-%dT%H:%M:%S%.3f".into(),
-                ),
+                tracing_subscriber::fmt::time::ChronoUtc::with_format(log_timestamp_format),
             ))
             .with(log_level),
     )?;
