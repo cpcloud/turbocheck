@@ -42,8 +42,8 @@ struct Opt {
     duration_between_requests: Duration,
 
     /// Verbosity of logs.
-    #[structopt(long, default_value = "INFO")]
-    log_level: tracing_subscriber::filter::LevelFilter,
+    #[structopt(long, default_value = "info")]
+    log_level: tracing_subscriber::filter::EnvFilter,
 }
 
 #[tokio::main(flavor = "current_thread")]
