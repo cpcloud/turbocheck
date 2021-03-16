@@ -39,7 +39,7 @@ struct Opt {
         default_value = "1s",
         parse(try_from_str = humantime::parse_duration)
     )]
-    time_between_requests: Duration,
+    duration_between_requests: Duration,
 
     /// Verbosity of logs.
     #[structopt(long, default_value = "INFO")]
@@ -51,9 +51,9 @@ async fn main() -> anyhow::Result<()> {
     let Opt {
         twilio_config,
         area,
-        time_between_requests,
         log_level,
         site_pattern,
+        duration_between_requests,
     } = Opt::from_args();
 
     tracing::subscriber::set_global_default(
@@ -113,8 +113,9 @@ async fn main() -> anyhow::Result<()> {
             error!(?error);
         }
 
-        debug!(message = "sleep", ?time_between_requests);
-        tokio::time::sleep(time_between_requests).await;
+        debug!(message = "sleep", ?duration_between_requests);
+        tokio::time::sleep(duration_between_requests).await;
     }
+
     Ok(())
 }
