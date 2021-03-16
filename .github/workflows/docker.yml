@@ -21,10 +21,10 @@ jobs:
         run: nix build -L -f. turbocheck-image --no-link
 
       - name: Load the image into Docker
-        run: docker load -i "$(nix path-info -L -f. turbocheck-image)"
+        run: docker load -i "$(nix path-info -L -f. turbocheckImage)"
 
       - name: Create a temporary Dockerfile
-        run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheck-image.imageTag)" > Dockerfile
+        run: echo "FROM turbocheck:$(nix eval -f. --raw turbocheckImage.imageTag)" > Dockerfile
 
       - name: Push to Dockerhub
         uses: docker/build-push-action@v1

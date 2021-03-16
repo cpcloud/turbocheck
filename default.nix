@@ -1,26 +1,49 @@
 let
   sources = import ./nix/sources.nix;
-  pkgs = import sources.nixpkgs {
-    overlays = [
-      (import sources.nixpkgs-mozilla)
-      (import ./nix/overlays/rust.nix)
-    ];
-  };
-
-  naersk = pkgs.callPackage sources.naersk { };
 in
-rec {
-  turbocheck = naersk.buildPackage {
-    root = ./.;
-    buildInputs = with pkgs; [ openssl pkg-config ];
-  };
-  turbocheck-image = pkgs.dockerTools.buildLayeredImage {
-    name = "turbocheck";
-    config = {
-      Entrypoint = [ "${turbocheck}/bin/turbocheck" ];
-      Env = [
-        "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+import sources.nixpkgs {
+  overlays = [
+    (import sources.fenix)
+    (self: super: {
+      naersk = self.callPackage sources.naersk { };
+    })
+    (self: super: {
+      inherit (self.rust-nightly.latest)
+        rustc
+        cargo
+        clippy-preview
+        rustfmt-preview
+        rust-analysis
+        rust-analyzer-preview
+        rust-std
+        rust-src;
+
+      rustToolchain = self.rust-nightly.latest.withComponents [
+        "rustc"
+        "cargo"
+        "clippy-preview"
+        "rustfmt-preview"
+        "rust-analysis"
+        "rust-analyzer-preview"
+        "rust-std"
+        "rust-src"
       ];
-    };
-  };
+    })
+    (self: super: {
+      turbocheck = self.naersk.buildPackage {
+        root = ./.;
+        buildInputs = [ self.openssl self.pkg-config ];
+      };
+
+      turbocheckImage = self.dockerTools.buildLayeredImage {
+        name = "turbocheck";
+        config = {
+          Entrypoint = [ "${self.turbocheck}/bin/turbocheck" ];
+          Env = [
+            "SSL_CERT_FILE=${self.cacert}/etc/ssl/certs/ca-bundle.crt"
+          ];
+        };
+      };
+    })
+  ];
 }
