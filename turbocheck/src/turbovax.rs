@@ -86,7 +86,7 @@ impl TurboxVaxClient {
                         } else {
                             None
                         }
-                    })
+                    }),
             );
         }
         Ok(iters.into_iter().flatten())
