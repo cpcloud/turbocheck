@@ -1,6 +1,5 @@
-use anyhow::Result;
 use chrono::prelude::{DateTime, Local};
-use serde::Deserialize;
+use url::Url;
 
 #[derive(
     Debug,
@@ -25,79 +24,71 @@ pub(crate) enum Area {
     LongIsland,
 }
 
-#[derive(serde::Deserialize)]
-pub(crate) struct Site {
-    /// The name of the vaccination site.
-    #[serde(rename = "site_name")]
-    pub(crate) site: String,
+#[derive(serde::Deserialize, Clone)]
+pub(crate) struct Portal {
+    /// Full name of the portal.
+    pub(crate) name: String,
 
-    /// Whether or not the site is currently active.
-    pub(crate) is_active: bool,
+    /// Optional short name for the portal.
+    pub(crate) short_name: Option<String>,
+
+    /// Key used in locations data to reference the portal.
+    pub(crate) key: String,
 
     /// The URL people can use to get an appointment.
-    pub(crate) url: url::Url,
+    pub(crate) url: Url,
+}
+
+#[derive(serde::Deserialize)]
+pub(crate) struct Appointments {
+    /// Number of available appointments.
+    pub(crate) count: usize,
+
+    /// Appointment summary, including times.
+    pub(crate) summary: String,
+}
+
+#[derive(serde::Deserialize)]
+pub(crate) struct Location {
+    /// The name of the vaccination site.
+    pub(crate) name: String,
+
+    /// Whether or not the site is currently active.
+    pub(crate) active: bool,
+
+    /// Whether or not any appointments are available at all.
+    pub(crate) available: bool,
 
     /// The last time the site was updated, in local time.
     pub(crate) updated_at: DateTime<Local>,
 
-    /// The number of available appointments.
-    pub(crate) appointment_count: usize,
+    /// Not entirely clear what this field is used for.
+    #[serde(rename = "last_available_at")]
+    pub(crate) _last_available_at: DateTime<Local>,
 
-    /// Available appointment times.
-    #[serde(deserialize_with = "appointment_times_deserialize")]
-    pub(crate) appointment_times: Vec<String>,
+    /// Human readable portal name.
+    #[serde(rename = "portal_name")]
+    pub(crate) _portal_name: String,
 
-    /// Whether or not any appointments are available at all.
-    pub(crate) is_available: bool,
+    /// Portal key.
+    pub(crate) portal: String,
 
     /// The borough/New York State area in which appointments are available.
     pub(crate) area: Area,
 
-    /// Not entirely clear what this field is used for.
-    #[serde(rename = "last_available_at")]
-    pub(crate) _last_available_at: DateTime<Local>,
-}
+    /// Available appointments.
+    pub(crate) appointments: Appointments,
 
-// XXX: Hopefully this doesn't ever change to a different character!
-const APPOINTMENT_TIMES_SPLIT_CHAR: char = ';';
-
-fn appointment_times_deserialize<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    Ok(String::deserialize(deserializer)?
-        .split(APPOINTMENT_TIMES_SPLIT_CHAR)
-        .map(ToOwned::to_owned)
-        .collect())
+    /// URL containing more information
+    #[serde(rename = "info_url")]
+    pub(crate) _info_url: Option<Url>,
 }
 
 #[derive(serde::Deserialize)]
-pub(crate) struct Data {
-    pub(crate) feed: Feed,
-}
+pub(crate) struct Dashboard {
+    /// Sequence of portals.
+    pub(crate) portals: Vec<Portal>,
 
-#[derive(serde::Deserialize)]
-pub(crate) struct Feed {
-    #[serde(rename = "entry")]
-    pub(crate) entries: Vec<Entry>,
-}
-
-#[derive(serde::Deserialize)]
-pub(crate) struct Entry {
-    pub(crate) content: Content,
-}
-
-#[derive(serde::Deserialize)]
-pub(crate) struct Content {
-    #[serde(rename = "$t", deserialize_with = "site_deserialize")]
-    pub(crate) site: Site,
-}
-
-// TODO: `serde_with` in theory could work, but it appears to not work unless you impl both Deserialize _and_ Serialize.
-// Way overkill to impl an ultimately unused Serialize just to avoid writing two functions.
-fn site_deserialize<'de, D>(deserializer: D) -> Result<Site, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    serde_json::from_str(&String::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+    /// Sequence of locations.
+    pub(crate) locations: Vec<Location>,
 }

@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    vax_site::{Area, Data, Site},
+    vax_site::{Appointments, Area, Dashboard, Location, Portal},
 };
 use chrono::prelude::{DateTime, Local};
 use enumset::EnumSet;
@@ -29,9 +29,9 @@ pub(crate) struct TurboxVaxClient {
     url_shortener: UrlShortener,
 
     #[builder(default = Default::default())]
-    site_pattern: Option<regex::Regex>,
+    site_filter: Option<regex::Regex>,
 
-    data_uris: Vec<String>,
+    data_uri: String,
 }
 
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
@@ -63,33 +63,31 @@ fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), E
 }
 
 impl TurboxVaxClient {
-    async fn unified_data(&self) -> Result<impl Iterator<Item = Site>, Error> {
+    async fn data(&self) -> Result<impl Iterator<Item = (Location, Portal)>, Error> {
         let areas = self.areas;
-        let mut iters = vec![];
-        for uri in self.data_uris.iter().cloned() {
-            iters.push(
-                self.client
-                    .get(uri)
-                    .send()
-                    .await
-                    .map_err(Error::GetData)?
-                    .json::<Data>()
-                    .await
-                    .map_err(Error::ParseData)?
-                    .feed
-                    .entries
-                    .into_iter()
-                    .filter_map(move |entry| {
-                        let site = entry.content.site;
-                        if site.is_active && areas.contains(site.area) {
-                            Some(site)
-                        } else {
-                            None
-                        }
-                    }),
-            );
-        }
-        Ok(iters.into_iter().flatten())
+        let data = self
+            .client
+            .get(&self.data_uri)
+            .send()
+            .await
+            .map_err(Error::GetData)?
+            .json::<Dashboard>()
+            .await
+            .map_err(Error::ParseData)?;
+        let portals = data
+            .portals
+            .into_iter()
+            .map(move |portal| (portal.key.clone(), portal))
+            .collect::<HashMap<_, _>>();
+        let locations = data.locations;
+        Ok(locations.into_iter().filter_map(move |location| {
+            if location.active && areas.contains(location.area) {
+                let portal = location.portal.clone();
+                Some((location, portals[&portal].clone()))
+            } else {
+                None
+            }
+        }))
     }
 
     fn get_maps_short_url(&self, site: &str) -> Result<String, Error> {
@@ -116,36 +114,37 @@ impl TurboxVaxClient {
         level = "debug"
     )]
     pub(crate) async fn check_availability(&mut self) -> Result<(), Error> {
-        for Site {
-            site,
-            url,
-            updated_at,
-            appointment_count,
-            is_available,
-            appointment_times,
-            area,
-            ..
-        } in self.unified_data().await?
+        for (
+            Location {
+                name,
+                updated_at,
+                appointments: Appointments { count, summary },
+                available,
+                area,
+                ..
+            },
+            Portal { url, .. },
+        ) in self.data().await?
         {
             let desired_site = self
-                .site_pattern
+                .site_filter
                 .as_ref()
-                .map(|pattern| pattern.is_match(&site))
+                .map(|pattern| pattern.is_match(&name))
                 .unwrap_or(true);
             // if the site has available appointments
-            if is_available {
-                let newly_available = !self.was_available.contains(&site);
+            if available {
+                let newly_available = !self.was_available.contains(&name);
 
                 // compute whether the site's last updated time is more recent than the currently
                 // stored updated time
                 let updated_recently = updated_at
                     > *self
                         .last_updated_at
-                        .entry(site.clone())
+                        .entry(name.clone())
                         .or_insert(updated_at);
 
                 // always set the latest known update time for the site
-                self.last_updated_at.insert(site.clone(), updated_at);
+                self.last_updated_at.insert(name.clone(), updated_at);
 
                 // if the site is newly available *or* if the appointment times for the site
                 // have been updated recently
@@ -157,27 +156,23 @@ impl TurboxVaxClient {
                             area = area,
                         ),
                         "".into(),
-                        format!("Site: {}", &site),
+                        format!("Site: {}", &name),
                         "".into(),
                         format!("Area: {:?}", area),
                         format!("Sched: {}", url),
-                        format!("Map: {}", self.get_maps_short_url(&site)?),
+                        format!("Map: {}", self.get_maps_short_url(&name)?),
                         "".into(),
                     ];
 
-                    self.was_available.insert(site.clone());
+                    self.was_available.insert(name.clone());
 
                     let body_lines = lines
                         .into_iter()
-                        .chain(
-                            appointment_times
-                                .into_iter()
-                                .map(|s| format!("Times: {}", s)),
-                        )
+                        .chain(std::iter::once(format!("Times: {}", summary)))
                         .chain(std::iter::once("".into()))
                         .chain(
                             vec![
-                                format!("Appts Remaining: {}", appointment_count),
+                                format!("Appts Remaining: {}", count),
                                 format!("Last Updated: {}", updated_at),
                             ]
                             .into_iter(),
@@ -200,12 +195,12 @@ impl TurboxVaxClient {
                         }
                     }
                 }
-            } else if self.was_available.remove(&site) && desired_site {
+            } else if self.was_available.remove(&name) && desired_site {
                 let message = format!(
                     "{updated_at} {area:?}: {site} appts no longer available",
                     updated_at = updated_at,
                     area = area,
-                    site = site,
+                    site = name,
                 );
                 warn!(message = message.as_str());
 

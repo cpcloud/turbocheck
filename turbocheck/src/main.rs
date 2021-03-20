@@ -26,7 +26,7 @@ struct Opt {
 
     /// Pattern of text to use for searching site names. Not specifying this argument results in all sites being displayed.
     #[structopt(short, long)]
-    site_pattern: Option<regex::Regex>,
+    site_filter: Option<regex::Regex>,
 
     /// Optional Twilio configuration. If this argument isn't provided, then text messaging functionality will be disabled.
     #[structopt(short, long)]
@@ -49,25 +49,24 @@ struct Opt {
     #[structopt(long, default_value = "%Y-%m-%dT%H:%M:%S%.3f")]
     log_timestamp_format: String,
 
-    #[structopt(short = "-u", long)]
-    turbovax_data_uris: Vec<String>,
+    #[structopt(
+        short = "-u",
+        long,
+        default_value = "https://turbovax.global.ssl.fastly.net/dashboard"
+    )]
+    data_uri: String,
 }
-
-const DEFAULT_DATA_URIS: [&str; 2] = [
-    "https://spreadsheets.google.com/feeds/cells/1NNZJWI7BYlajdBcqkEpOXXq6EZZyMd-zSIGKHNgS99w/4/public/full?alt=json",
-    "https://spreadsheets.google.com/feeds/cells/1ORaOxzA1hKSd7w-iNOj6uS2MaG01l6ff1bHQ0dt2MIA/4/public/full?alt=json"
-];
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let Opt {
         area,
-        site_pattern,
+        site_filter,
         twilio_config,
         duration_between_requests,
         log_level,
         log_timestamp_format,
-        mut turbovax_data_uris,
+        data_uri,
     } = Opt::from_args();
 
     tracing::subscriber::set_global_default(
@@ -87,15 +86,12 @@ async fn main() -> anyhow::Result<()> {
 
     info!(message = "searching", ?areas);
 
-    turbovax_data_uris.extend(DEFAULT_DATA_URIS.iter().map(|&data_uri| data_uri.into()));
-    turbovax_data_uris.dedup();
-
     let request_client = reqwest::ClientBuilder::new().build()?;
     let mut client = turbovax::TurboxVaxClient::builder()
         .client(request_client.clone())
         .areas(areas)
-        .site_pattern(site_pattern)
-        .data_uris(turbovax_data_uris)
+        .site_filter(site_filter)
+        .data_uri(data_uri)
         .twilio_client(if let Some(twilio_config) = twilio_config {
             let twilio_concurrent::TwilioConfig {
                 account_sid,
