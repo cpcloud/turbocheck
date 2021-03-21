@@ -1,16 +1,17 @@
 use crate::{
+    dashboard::{Area, Dashboard, Location, Portal},
     error::Error,
-    vax_site::{Appointments, Area, Dashboard, Location, Portal},
+    twilio_concurrent,
 };
 use chrono::prelude::{DateTime, Local};
 use enumset::EnumSet;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use std::collections::{HashMap, HashSet};
-use tracing::{info, instrument, warn};
+use tracing::{info, warn};
 use urlshortener::client::UrlShortener;
 
 #[derive(typed_builder::TypedBuilder)]
-pub(crate) struct TurboxVaxClient {
+pub(crate) struct Client {
     client: reqwest::Client,
 
     #[builder(default = Default::default())]
@@ -43,7 +44,10 @@ const HEADER_TITLE_LENGTH: usize = HEADER_TITLE.len();
 const FOOTER_TITLE: &str = " END ";
 const FOOTER_TITLE_LENGTH: usize = FOOTER_TITLE.len();
 
-fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), Error> {
+fn format_header_footer<S>(lines: &[S]) -> Result<(String, String), Error>
+where
+    S: AsRef<str>,
+{
     let max_line_len = lines
         .iter()
         .map(|s| s.as_ref().len())
@@ -62,7 +66,7 @@ fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), E
     Ok((header, footer))
 }
 
-impl TurboxVaxClient {
+impl Client {
     async fn data(&self) -> Result<impl Iterator<Item = (Location, Portal)>, Error> {
         let areas = self.areas;
         let Dashboard { portals, locations } = self
@@ -106,17 +110,12 @@ impl TurboxVaxClient {
             .map_err(Error::GetShortUrl)
     }
 
-    #[instrument(
-        name = "TurboxVaxClient::check_availability",
-        skip(self),
-        level = "debug"
-    )]
     pub(crate) async fn check_availability(&mut self) -> Result<(), Error> {
         for (
             Location {
                 name,
                 updated_at,
-                appointments: Appointments { count, summary },
+                appointments,
                 available,
                 area,
                 ..
@@ -166,11 +165,11 @@ impl TurboxVaxClient {
 
                     let body_lines = lines
                         .into_iter()
-                        .chain(std::iter::once(format!("Times: {}", summary)))
+                        .chain(std::iter::once(format!("Times: {}", appointments.summary)))
                         .chain(std::iter::once("".into()))
                         .chain(
                             vec![
-                                format!("Appts Remaining: {}", count),
+                                format!("Appts Remaining: {}", appointments.count),
                                 format!("Last Updated: {}", updated_at),
                             ]
                             .into_iter(),

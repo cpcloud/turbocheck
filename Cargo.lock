@@ -1604,21 +1604,9 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
- "twilio_concurrent",
  "typed-builder",
  "url",
  "urlshortener",
-]
-
-[[package]]
-name = "twilio_concurrent"
-version = "0.1.0"
-dependencies = [
- "futures",
- "reqwest 0.11.2",
- "serde",
- "tracing",
- "typed-builder",
 ]
 
 [[package]]

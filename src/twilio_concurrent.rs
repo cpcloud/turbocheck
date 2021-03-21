@@ -3,54 +3,48 @@ use std::collections::HashSet;
 use tracing::{debug, instrument};
 
 #[derive(Debug, serde::Deserialize)]
-pub struct TwilioConfig {
+pub(crate) struct TwilioConfig {
     /// Twilio account SID.
-    pub account_sid: String,
+    pub(crate) account_sid: String,
 
     /// Twilio auth token.
-    pub auth_token: String,
+    pub(crate) auth_token: String,
 
     /// The sender of the appointment availability text message.
-    pub sms_from: String,
+    pub(crate) sms_from: String,
 
     /// The receiver of the appointment availability text message.
-    pub sms_to: HashSet<String>,
+    pub(crate) sms_to: HashSet<String>,
 }
 
 #[derive(typed_builder::TypedBuilder)]
-pub struct Client {
+pub(crate) struct Client {
     client: reqwest::Client,
-
-    /// Twilio account SID
-    account_sid: String,
-
-    /// Twilio auth token.
-    auth_token: String,
-
-    /// The sender of the appointment availability text message.
-    sms_from: String,
-
-    /// The receiver of the appointment availability text message.
-    sms_to: HashSet<String>,
+    config: TwilioConfig,
 }
 
 impl Client {
     #[instrument(name = "Client::send_to_many", skip(self, message), err)]
-    pub async fn send_to_many(&self, message: &str) -> Result<(), reqwest::Error> {
+    pub(crate) async fn send_to_many(&self, message: &str) -> Result<(), reqwest::Error> {
         let url = format!(
             "https://api.twilio.com/2010-04-01/Accounts/{}/Messages.json",
-            self.account_sid
+            self.config.account_sid
         );
 
         // send appointment availabilty information to all specified phone numbers concurrently
-        self.sms_to
+        self.config
+            .sms_to
             .iter()
             .map(|sms_to| {
                 debug!(message = "sending", sms_to = sms_to.as_str());
                 self.client
                     .post(&url)
-                    .basic_auth(&self.account_sid, Some(&self.auth_token))
-                    .form(&[("Body", message), ("From", &self.sms_from), ("To", sms_to)])
+                    .basic_auth(&self.config.account_sid, Some(&self.config.auth_token))
+                    .form(&[
+                        ("Body", message),
+                        ("From", &self.config.sms_from),
+                        ("To", sms_to),
+                    ])
                     .send()
             })
             .collect::<FuturesUnordered<_>>()

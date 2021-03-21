@@ -1,6 +1,7 @@
 use chrono::prelude::{DateTime, Local};
 use url::Url;
 
+/// The borough or New York state area where a vaccine appointment is being given.
 #[derive(
     Debug,
     serde::Deserialize,
@@ -15,15 +16,29 @@ pub(crate) enum Area {
     Brooklyn,
     Bronx,
 
-    #[serde(rename = "Staten Island")]
+    #[serde(rename(deserialize = "Staten Island"))]
     StatenIsland,
 
     Upstate,
 
-    #[serde(rename = "Long Island")]
+    #[serde(rename(deserialize = "Long Island"))]
     LongIsland,
+
+    #[serde(rename(deserialize = "Multiple locations"))]
+    Multiple,
 }
 
+/// Appointment summary information.
+#[derive(serde::Deserialize)]
+pub(crate) struct Appointments {
+    /// Number of available appointments.
+    pub(crate) count: usize,
+
+    /// Appointment summary, including times.
+    pub(crate) summary: String,
+}
+
+/// Vaccine appointment portal information.
 #[derive(serde::Deserialize, Clone)]
 pub(crate) struct Portal {
     /// Full name of the portal.
@@ -39,15 +54,7 @@ pub(crate) struct Portal {
     pub(crate) url: Url,
 }
 
-#[derive(serde::Deserialize)]
-pub(crate) struct Appointments {
-    /// Number of available appointments.
-    pub(crate) count: usize,
-
-    /// Appointment summary, including times.
-    pub(crate) summary: String,
-}
-
+/// Vaccine location information.
 #[derive(serde::Deserialize)]
 pub(crate) struct Location {
     /// The name of the vaccination site.
@@ -63,11 +70,11 @@ pub(crate) struct Location {
     pub(crate) updated_at: DateTime<Local>,
 
     /// Not entirely clear what this field is used for.
-    #[serde(rename = "last_available_at")]
+    #[serde(rename(deserialize = "last_available_at"))]
     pub(crate) _last_available_at: DateTime<Local>,
 
     /// Human readable portal name.
-    #[serde(rename = "portal_name")]
+    #[serde(rename(deserialize = "portal_name"))]
     pub(crate) _portal_name: String,
 
     /// Portal key.
@@ -76,17 +83,18 @@ pub(crate) struct Location {
     /// The borough/New York State area in which appointments are available.
     pub(crate) area: Area,
 
-    /// Available appointments.
+    /// Information about available appointments.
     pub(crate) appointments: Appointments,
 
     /// URL containing more information
-    #[serde(rename = "info_url")]
+    #[serde(rename(deserialize = "info_url"))]
     pub(crate) _info_url: Option<Url>,
 }
 
+/// Aggregate portal + location information.
 #[derive(serde::Deserialize)]
 pub(crate) struct Dashboard {
-    /// Sequence of portals.
+    /// Sequence of portals containing information about where (on the internet) to schedule an appointment.
     pub(crate) portals: Vec<Portal>,
 
     /// Sequence of locations.
