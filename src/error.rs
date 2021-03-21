@@ -12,9 +12,6 @@ pub(crate) enum Error {
     #[error("failed to send unavailability text message")]
     SendUnavailableMessage(#[source] reqwest::Error),
 
-    #[error("failed to build Google Maps URI")]
-    BuildMapsUri(#[source] http::Error),
-
     #[error("failed to get short URL: {0:?}")]
     GetShortUrl(urlshortener::providers::ProviderError),
 

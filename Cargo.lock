@@ -1589,7 +1589,6 @@ dependencies = [
  "ctrlc",
  "enumset",
  "futures",
- "http",
  "humantime",
  "percent-encoding",
  "regex",

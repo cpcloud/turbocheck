@@ -101,9 +101,9 @@ async fn main() -> anyhow::Result<()> {
         .context("creating reqwest client")?;
     let mut client = client::Client::builder()
         .client(request_client.clone())
+        .data_url(data_url)
         .areas(areas)
         .site_filter(site_filter)
-        .data_url(data_url)
         .twilio_client(if let Some(twilio_config) = twilio_config {
             Some(
                 twilio_concurrent::Client::builder()
