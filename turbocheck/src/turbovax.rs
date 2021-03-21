@@ -65,21 +65,19 @@ fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), E
 impl TurboxVaxClient {
     async fn data(&self) -> Result<impl Iterator<Item = (Location, Portal)>, Error> {
         let areas = self.areas;
-        let data = self
+        let Dashboard { portals, locations } = self
             .client
             .get(&self.data_uri)
             .send()
             .await
             .map_err(Error::GetData)?
-            .json::<Dashboard>()
+            .json()
             .await
             .map_err(Error::ParseData)?;
-        let portals = data
-            .portals
+        let portals = portals
             .into_iter()
             .map(move |portal| (portal.key.clone(), portal))
             .collect::<HashMap<_, _>>();
-        let locations = data.locations;
         Ok(locations.into_iter().filter_map(move |location| {
             if location.active && areas.contains(location.area) {
                 let portal = location.portal.clone();
