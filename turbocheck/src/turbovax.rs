@@ -31,7 +31,7 @@ pub(crate) struct TurboxVaxClient {
     #[builder(default = Default::default())]
     site_filter: Option<regex::Regex>,
 
-    data_uri: String,
+    data_url: url::Url,
 }
 
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
@@ -67,7 +67,7 @@ impl TurboxVaxClient {
         let areas = self.areas;
         let Dashboard { portals, locations } = self
             .client
-            .get(&self.data_uri)
+            .get(self.data_url.clone())
             .send()
             .await
             .map_err(Error::GetData)?

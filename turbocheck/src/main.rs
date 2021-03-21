@@ -18,6 +18,7 @@ mod error;
 mod turbovax;
 mod vax_site;
 
+/// A command line client for https://turbovax.info data.
 #[derive(Debug, structopt::StructOpt)]
 struct Opt {
     /// Boroughs/regions to look for appointments in. Not specifying this argument searches all areas.
@@ -54,7 +55,7 @@ struct Opt {
         long,
         default_value = "https://turbovax.global.ssl.fastly.net/dashboard"
     )]
-    data_uri: String,
+    data_url: url::Url,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -66,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
         duration_between_requests,
         log_level,
         log_timestamp_format,
-        data_uri,
+        data_url,
     } = Opt::from_args();
 
     tracing::subscriber::set_global_default(
@@ -91,7 +92,7 @@ async fn main() -> anyhow::Result<()> {
         .client(request_client.clone())
         .areas(areas)
         .site_filter(site_filter)
-        .data_uri(data_uri)
+        .data_url(data_url)
         .twilio_client(if let Some(twilio_config) = twilio_config {
             let twilio_concurrent::TwilioConfig {
                 account_sid,
