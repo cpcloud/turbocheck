@@ -14,7 +14,11 @@ use urlshortener::client::UrlShortener;
 pub(crate) struct Client {
     client: reqwest::Client,
     data_url: url::Url,
+
+    #[builder(default = EnumSet::all())]
     areas: EnumSet<Area>,
+
+    #[builder(default = Default::default())]
     site_filter: Option<regex::Regex>,
 
     #[builder(default = Default::default())]
@@ -39,10 +43,7 @@ const HEADER_TITLE_LENGTH: usize = HEADER_TITLE.len();
 const FOOTER_TITLE: &str = " END ";
 const FOOTER_TITLE_LENGTH: usize = FOOTER_TITLE.len();
 
-fn format_header_footer<S>(lines: &[S]) -> Result<(String, String), Error>
-where
-    S: AsRef<str>,
-{
+fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), Error> {
     let max_line_len = lines
         .iter()
         .map(|s| s.as_ref().len())
@@ -91,9 +92,9 @@ impl Client {
             .map(move |portal| (portal.key.clone(), portal))
             .collect::<HashMap<_, _>>();
         Ok(locations.into_iter().filter_map(move |location| {
-            if location.active && areas.contains(location.area) {
-                let portal = location.portal.clone();
-                Some((location, portals[&portal].clone()))
+            if location.currently_giving_vaccinations && areas.contains(location.area) {
+                let portal_key = location.portal_key.clone();
+                Some((location, portals[&portal_key].clone()))
             } else {
                 None
             }
@@ -103,34 +104,35 @@ impl Client {
     async fn check_location_availability(
         &mut self,
         Location {
-            name,
+            site,
             updated_at,
             appointments,
-            available,
+            has_appointments,
             area,
             ..
         }: Location,
         Portal { url, .. }: Portal,
     ) -> Result<(), Error> {
-        let desired_site = self
+        let site_matches_filter_pattern = self
             .site_filter
             .as_ref()
-            .map(|pattern| pattern.is_match(&name))
+            .map(|pattern| pattern.is_match(&site))
             .unwrap_or(true);
+
         // if the site has available appointments
-        if available {
-            let newly_available = !self.was_available.contains(&name);
+        if has_appointments {
+            let newly_available = !self.was_available.contains(&site);
 
             // compute whether the site's last updated time is more recent than the currently
             // stored updated time
             let updated_recently = updated_at
                 > *self
                     .last_updated_at
-                    .entry(name.clone())
+                    .entry(site.clone())
                     .or_insert(updated_at);
 
             // always set the latest known update time for the site
-            self.last_updated_at.insert(name.clone(), updated_at);
+            self.last_updated_at.insert(site.clone(), updated_at);
 
             // if the site is newly available *or* if the appointment times for the site
             // have been updated recently
@@ -142,21 +144,30 @@ impl Client {
                         area = area,
                     ),
                     "".into(), // these empty strings are adding one more newline in between sections
-                    format!("Site: {}", &name),
+                    format!("Site: {}", &site),
                     "".into(),
                     format!("Area: {:?}", area),
                     format!("Sched: {}", self.get_short_url(&url.to_string())?),
-                    format!("Map: {}", self.get_maps_short_url(&name)?),
+                    format!("Map: {}", self.get_maps_short_url(&site)?),
                     "".into(),
-                    format!("Times: {}", appointments.summary),
+                ]
+                .into_iter()
+                .chain(
+                    appointments
+                        .summary
+                        .into_iter()
+                        .map(|slot| format!("Times: {}", slot)),
+                )
+                .chain(vec![
                     "".into(),
                     format!("Appts Remaining: {}", appointments.count),
                     format!("Last Updated: {}", updated_at),
-                ];
+                ])
+                .collect::<Vec<_>>();
 
-                self.was_available.insert(name.clone());
+                self.was_available.insert(site.clone());
 
-                if desired_site {
+                if site_matches_filter_pattern {
                     let (header, footer) = format_header_footer(&lines)?;
                     info!(message = header.as_str());
                     lines.iter().for_each(|line| info!(message = line.as_str()));
@@ -171,12 +182,12 @@ impl Client {
                     }
                 }
             }
-        } else if self.was_available.remove(&name) && desired_site {
+        } else if self.was_available.remove(&site) && site_matches_filter_pattern {
             let message = format!(
                 "{updated_at} {area:?}: {site} appts no longer available",
                 updated_at = updated_at,
                 area = area,
-                site = name,
+                site = site,
             );
             warn!(message = message.as_str());
 

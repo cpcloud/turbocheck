@@ -1,4 +1,5 @@
 use chrono::prelude::{DateTime, Local};
+use serde::Deserialize;
 use url::Url;
 
 /// The borough or New York state area where a vaccine appointment is being given.
@@ -26,6 +27,9 @@ pub(crate) enum Area {
 
     #[serde(rename(deserialize = "Multiple locations"))]
     Multiple,
+
+    #[serde(rename(deserialize = "Mid-Hudson"))]
+    MidHudson,
 }
 
 /// Appointment summary information.
@@ -35,7 +39,20 @@ pub(crate) struct Appointments {
     pub(crate) count: usize,
 
     /// Appointment summary, including times.
-    pub(crate) summary: String,
+    #[serde(deserialize_with = "deserialize_appointment_times")]
+    pub(crate) summary: Vec<String>,
+}
+
+const APPOINTMENT_TIMES_SEPARATOR: char = ';';
+
+fn deserialize_appointment_times<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    Ok(String::deserialize(deserializer)?
+        .split(APPOINTMENT_TIMES_SEPARATOR)
+        .map(ToOwned::to_owned)
+        .collect())
 }
 
 /// Vaccine appointment portal information.
@@ -58,18 +75,21 @@ pub(crate) struct Portal {
 #[derive(serde::Deserialize)]
 pub(crate) struct Location {
     /// The name of the vaccination site.
-    pub(crate) name: String,
+    #[serde(rename(deserialize = "name"))]
+    pub(crate) site: String,
 
     /// Whether or not the site is currently active.
-    pub(crate) active: bool,
+    #[serde(rename(deserialize = "active"))]
+    pub(crate) currently_giving_vaccinations: bool,
 
     /// Whether or not any appointments are available at all.
-    pub(crate) available: bool,
+    #[serde(rename(deserialize = "available"))]
+    pub(crate) has_appointments: bool,
 
     /// The last time the site was updated, in local time.
     pub(crate) updated_at: DateTime<Local>,
 
-    /// Not entirely clear what this field is used for.
+    /// When information was last available.
     #[serde(rename(deserialize = "last_available_at"))]
     pub(crate) _last_available_at: DateTime<Local>,
 
@@ -78,7 +98,8 @@ pub(crate) struct Location {
     pub(crate) _portal_name: String,
 
     /// Portal key.
-    pub(crate) portal: String,
+    #[serde(rename(deserialize = "portal_key"))]
+    pub(crate) portal_key: String,
 
     /// The borough/New York State area in which appointments are available.
     pub(crate) area: Area,
