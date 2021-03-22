@@ -98,7 +98,7 @@ pub(crate) struct Location {
     pub(crate) _portal_name: String,
 
     /// Portal key.
-    #[serde(rename(deserialize = "portal_key"))]
+    #[serde(rename(deserialize = "portal"))]
     pub(crate) portal_key: String,
 
     /// The borough/New York State area in which appointments are available.
