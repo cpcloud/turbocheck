@@ -3,7 +3,7 @@ pub(crate) enum Error {
     #[error("GET request to TurboVax failed")]
     GetData(#[source] reqwest::Error),
 
-    #[error("failed to parse JSON result")]
+    #[error("failed to parse JSON appointment data")]
     ParseData(#[source] reqwest::Error),
 
     #[error("failed to send availability text message")]
