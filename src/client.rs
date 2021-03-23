@@ -8,7 +8,6 @@ use enumset::EnumSet;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use std::collections::{HashMap, HashSet};
 use tracing::{info, warn};
-use urlshortener::client::UrlShortener;
 
 #[derive(typed_builder::TypedBuilder)]
 pub(crate) struct Client {
@@ -29,9 +28,6 @@ pub(crate) struct Client {
 
     #[builder(default = Default::default())]
     last_updated_at: HashMap<String, DateTime<Local>>,
-
-    #[builder(default = UrlShortener::new().expect("failed to construct UrlShortener"))]
-    url_shortener: UrlShortener,
 }
 
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
@@ -63,17 +59,24 @@ fn format_header_footer(lines: &[impl AsRef<str>]) -> Result<(String, String), E
 }
 
 impl Client {
-    fn get_short_url(&self, url: &str) -> Result<String, Error> {
-        self.url_shortener
-            .generate(url, &urlshortener::providers::Provider::IsGd)
-            .map_err(Error::GetShortUrl)
+    async fn get_short_url(&self, url: &str) -> Result<String, Error> {
+        self.client
+            .get("https://is.gd/create.php")
+            .query(&[("format", "simple"), ("url", url)])
+            .send()
+            .await
+            .map_err(Error::GetShortUrl)?
+            .text()
+            .await
+            .map_err(Error::GetShortUrlText)
     }
 
-    fn get_maps_short_url(&self, site: &str) -> Result<String, Error> {
-        self.get_short_url(&format!(
+    async fn get_maps_short_url(&self, site: &str) -> Result<String, Error> {
+        let maps_url = format!(
             "https://www.google.com/maps/search/?api=1&query={}",
             utf8_percent_encode(&site, FRAGMENT).to_string()
-        ))
+        );
+        self.get_short_url(&maps_url).await
     }
 
     async fn data(&self) -> Result<impl Iterator<Item = (Location, Portal)>, Error> {
@@ -147,8 +150,8 @@ impl Client {
                     format!("Site: {}", &site),
                     "".into(),
                     format!("Area: {:?}", area),
-                    format!("Sched: {}", self.get_short_url(&url.to_string())?),
-                    format!("Map: {}", self.get_maps_short_url(&site)?),
+                    format!("Sched: {}", self.get_short_url(&url.to_string()).await?),
+                    format!("Map: {}", self.get_maps_short_url(&site).await?),
                     "".into(),
                 ]
                 .into_iter()

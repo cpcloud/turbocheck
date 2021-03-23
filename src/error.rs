@@ -12,8 +12,11 @@ pub(crate) enum Error {
     #[error("failed to send unavailability text message")]
     SendUnavailableMessage(#[source] reqwest::Error),
 
-    #[error("failed to get short URL: {0:?}")]
-    GetShortUrl(urlshortener::providers::ProviderError),
+    #[error("failed to get short URL")]
+    GetShortUrl(#[source] reqwest::Error),
+
+    #[error("failed to get short URL text")]
+    GetShortUrlText(#[source] reqwest::Error),
 
     #[error("failed to compute maximum line length because message is empty")]
     GetMaxMessageLineLength,
