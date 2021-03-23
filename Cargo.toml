@@ -34,3 +34,10 @@ features = ["env-filter", "smallvec", "ansi"]
 opt-level = "z"
 lto = true
 codegen-units = 1
+
+[package.metadata.release]
+disable-push = true
+disable-tag = true
+disable-publish = true
+tag-prefix = ""
+no-dev-version = true
