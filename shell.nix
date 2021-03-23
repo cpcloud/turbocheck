@@ -8,6 +8,7 @@ pkgs.mkShell {
     cargo-bloat
     cargo-edit
     cargo-udeps
+    cargo-release
     niv
     openssl
     pkg-config
