@@ -49,10 +49,16 @@ fn deserialize_appointment_times<'de, D>(deserializer: D) -> Result<Vec<String>,
 where
     D: serde::de::Deserializer<'de>,
 {
-    Ok(String::deserialize(deserializer)?
-        .split(APPOINTMENT_TIMES_SEPARATOR)
-        .map(ToOwned::to_owned)
-        .collect())
+    Ok(
+        if let Some(summary) = Option::<String>::deserialize(deserializer)? {
+            summary
+                .split(APPOINTMENT_TIMES_SEPARATOR)
+                .map(ToOwned::to_owned)
+                .collect()
+        } else {
+            vec![]
+        },
+    )
 }
 
 /// Vaccine appointment portal information.
