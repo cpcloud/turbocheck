@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 anyhow = { version = "1", default-features = false, features = ["std"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
-ctrlc = { version = "3", default-features = false, features = ["termination"] }
 enumset = { version = "1", default-features = false }
 futures = { version = "0.3", default-features = false, features = ["std"] }
 humantime = { version = "2", default-features = false }
@@ -19,7 +18,7 @@ structopt = { version = "0.3", default-features = false }
 strum = { version = "0.20", default-features = false }
 strum_macros = { version = "0.20", default-features = false }
 thiserror = { version = "1", default-features = false }
-tokio = { version = "1", default-features = false, features = ["macros", "rt", "fs"] }
+tokio = { version = "1", default-features = false, features = ["macros", "rt", "fs", "signal"] }
 toml = { version = "0.5", default-features = false }
 tracing = { version = "0.1", default-features = false, features = ["attributes"] }
 typed-builder = { version = "0.9", default-features = false }

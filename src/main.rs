@@ -1,15 +1,7 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context, Result};
 use dashboard::Area;
 use enumset::EnumSet;
-use std::{
-    iter::FromIterator,
-    path::PathBuf,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use std::{iter::FromIterator, path::PathBuf, time::Duration};
 use structopt::StructOpt;
 use strum::VariantNames;
 use tracing::{error, info};
@@ -58,15 +50,7 @@ struct Opt {
 }
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> anyhow::Result<()> {
-    let running = Arc::new(AtomicBool::new(true));
-    let running_clone = running.clone();
-
-    ctrlc::set_handler(move || {
-        running_clone.store(false, Ordering::SeqCst);
-    })
-    .context("setting ctrlc handler")?;
-
+async fn main() -> Result<()> {
     let Opt {
         area,
         site_filter,
@@ -123,15 +107,22 @@ async fn main() -> anyhow::Result<()> {
         })
         .build();
 
-    let mut interval = tokio::time::interval(duration_between_requests);
+    let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
 
-    while running.load(Ordering::SeqCst) {
-        if let Err(error) = client.check_availability().await {
-            error!(?error);
+    loop {
+        let request = async {
+            if let Err(error) = client.check_availability().await {
+                error!(?error);
+            }
+
+            tokio::time::sleep(duration_between_requests).await;
+        };
+
+        tokio::select! {
+            _ = sigint.recv() => return Err(anyhow!("got SIGINT")),
+            _ = sigterm.recv() => return Err(anyhow!("got SIGTERM")),
+            _ = request => continue,
         }
-
-        interval.tick().await;
     }
-
-    Ok(())
 }
