@@ -2,6 +2,8 @@ use chrono::prelude::{DateTime, Local};
 use serde::Deserialize;
 use url::Url;
 
+pub(crate) const DEFAULT_DATA_URL: &str = "https://turbovax.global.ssl.fastly.net/dashboard";
+
 /// The borough or New York state area where a vaccine appointment is being given.
 #[derive(
     Debug,
@@ -156,4 +158,19 @@ pub(crate) struct Dashboard {
 
     #[serde(rename(deserialize = "last_updated_at"))]
     pub(crate) _last_updated_at: DateTime<Local>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Dashboard, DEFAULT_DATA_URL};
+    use anyhow::Result;
+
+    #[tokio::test]
+    async fn test_data_model() -> Result<()> {
+        reqwest::get(DEFAULT_DATA_URL)
+            .await?
+            .json::<Dashboard>()
+            .await?;
+        Ok(())
+    }
 }

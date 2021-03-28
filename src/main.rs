@@ -48,7 +48,7 @@ struct Opt {
     #[structopt(
         short = "-u",
         long,
-        default_value = "https://turbovax.global.ssl.fastly.net/dashboard"
+        default_value = crate::dashboard::DEFAULT_DATA_URL
     )]
     data_url: url::Url,
 }
