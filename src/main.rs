@@ -4,6 +4,7 @@ use enumset::EnumSet;
 use std::{iter::FromIterator, path::PathBuf, time::Duration};
 use structopt::StructOpt;
 use strum::VariantNames;
+use tokio::signal::unix;
 use tracing::{error, info};
 use tracing_subscriber::layer::SubscriberExt;
 
@@ -119,8 +120,8 @@ async fn main() -> Result<()> {
         })
         .build();
 
-    let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-    let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
+    let mut sigterm = unix::signal(unix::SignalKind::terminate())?;
+    let mut sigint = unix::signal(unix::SignalKind::interrupt())?;
 
     loop {
         let request = async {
