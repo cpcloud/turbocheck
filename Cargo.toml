@@ -1,6 +1,6 @@
 [package]
 name = "turbocheck"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Phillip Cloud"]
 edition = "2018"
 
