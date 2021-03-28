@@ -12,5 +12,7 @@ pkgs.mkShell {
     niv
     openssl
     pkg-config
+    jq
+    yj
   ];
 }
