@@ -3,7 +3,7 @@
 
 set -euxo pipefail
 
-cargo release "${1:-minor}"
+cargo release "${1:-patch}"
 
 if [ "$#" -gt 1 ]; then
   shift 1
