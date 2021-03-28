@@ -14,5 +14,6 @@ pkgs.mkShell {
     pkg-config
     jq
     yj
+    gh
   ];
 }
