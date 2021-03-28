@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell --pure -i bash -p cacert cargo cargo-release gh git jq yj gh
+#!nix-shell --keep GITHUB_USER --keep GITHUB_TOKEN --pure -i bash -p cacert cargo cargo-release gh git jq yj gh
 
 set -euxo pipefail
 
