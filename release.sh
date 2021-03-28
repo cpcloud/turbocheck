@@ -7,21 +7,21 @@ options="$(getopt -o d --long notes: --long patch-level: --long target: -- "$@")
 eval set -- "$options"
 
 while [ "$1" != "--" ]; do
-	case "$1" in
-	"--notes")
-		shift
-		RELEASE_NOTES="$1"
+  case "$1" in
+  "--notes")
     shift
-		;;
-	"--patch-level")
-		shift
-		PATCH_LEVEL="$1"
+    RELEASE_NOTES="$1"
+    shift
+    ;;
+  "--patch-level")
+    shift
+    PATCH_LEVEL="$1"
     if [[ ! "$PATCH_LEVEL" =~ major|minor|patch ]]; then
-			echo >&2 "patch level must be on of major|minor|patch, got $PATCH_LEVEL"
-			exit 1
+      echo >&2 "patch level must be on of major|minor|patch, got $PATCH_LEVEL"
+      exit 1
     fi
     shift
-		;;
+    ;;
   "--target")
     shift
     TARGET="$1"
@@ -35,7 +35,7 @@ while [ "$1" != "--" ]; do
     shift
     break
     ;;
-	esac
+  esac
 done
 
 if [ -z "$RELEASE_NOTES" ]; then
