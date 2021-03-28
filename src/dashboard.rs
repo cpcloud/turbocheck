@@ -50,14 +50,12 @@ where
     D: serde::de::Deserializer<'de>,
 {
     Ok(
-        if let Some(summary) = Option::<String>::deserialize(deserializer)? {
+        Option::deserialize(deserializer)?.map_or_else(Default::default, |summary: &str| {
             summary
                 .split(APPOINTMENT_TIMES_SEPARATOR)
                 .map(ToOwned::to_owned)
                 .collect()
-        } else {
-            vec![]
-        },
+        }),
     )
 }
 
