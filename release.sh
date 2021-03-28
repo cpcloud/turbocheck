@@ -1,9 +1,9 @@
 #!/usr/bin/env nix-shell
-#!nix-shell --pure -i bash shell.nix
+#!nix-shell --pure -i bash -p cacert cargo cargo-release gh git jq yj gh
 
 set -euxo pipefail
 
 cargo release patch
 
-TAG="$(yj -tj < Cargo.toml | jq '.package.version' -rcM)"
-gh release create "$TAG" -t "Release $TAG" "$@"
+tag="$(yj -tj < Cargo.toml | jq '.package.version' -rcM)"
+gh release create "$tag" -t "Release $tag" "$@"
