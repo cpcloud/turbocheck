@@ -1,5 +1,5 @@
 use crate::{
-    dashboard::{Area, Dashboard, Location, Portal},
+    dashboard::{Area, Dashboard, Location, Portal, PortalType},
     error::Error,
     twilio_concurrent,
 };
@@ -16,6 +16,9 @@ pub(crate) struct Client {
 
     #[builder(default = EnumSet::all())]
     areas: EnumSet<Area>,
+
+    #[builder(default = EnumSet::all())]
+    location_types: EnumSet<PortalType>,
 
     #[builder(default = Default::default())]
     site_filter: Option<regex::Regex>,
@@ -81,7 +84,10 @@ impl Client {
 
     async fn data(&self) -> Result<impl Iterator<Item = (Location, Portal)>, Error> {
         let areas = self.areas;
-        let Dashboard { portals, locations } = self
+        let location_types = self.location_types;
+        let Dashboard {
+            portals, locations, ..
+        } = self
             .client
             .get(self.data_url.clone())
             .send()
@@ -95,9 +101,14 @@ impl Client {
             .map(move |portal| (portal.key.clone(), portal))
             .collect::<HashMap<_, _>>();
         Ok(locations.into_iter().filter_map(move |location| {
-            if location.currently_giving_vaccinations && areas.contains(location.area) {
-                let portal_key = location.portal_key.clone();
-                Some((location, portals[&portal_key].clone()))
+            if location.active && areas.contains(location.area) {
+                let portal_key = location.portal.clone();
+                let portal = portals[&portal_key].clone();
+                if location_types.contains(portal.r#type) {
+                    Some((location, portal))
+                } else {
+                    None
+                }
             } else {
                 None
             }
@@ -107,11 +118,13 @@ impl Client {
     async fn check_location_availability(
         &mut self,
         Location {
-            site,
+            id,
+            name,
             updated_at,
             appointments,
-            has_appointments,
+            available,
             area,
+            formatted_address,
             ..
         }: Location,
         Portal { url, .. }: Portal,
@@ -119,39 +132,44 @@ impl Client {
         let site_matches_filter_pattern = self
             .site_filter
             .as_ref()
-            .map(|pattern| pattern.is_match(&site))
+            .map(|pattern| pattern.is_match(&name))
             .unwrap_or(true);
 
         // if the site has available appointments
-        if has_appointments {
-            let newly_available = !self.was_available.contains(&site);
+        if available.unwrap_or(false) {
+            let newly_available = !self.was_available.contains(&name);
 
             // compute whether the site's last updated time is more recent than the currently
             // stored updated time
-            let updated_recently = updated_at
-                > *self
-                    .last_updated_at
-                    .entry(site.clone())
-                    .or_insert(updated_at);
+            let updated_recently = if let Some(updated_at) = updated_at {
+                let updated_recently = updated_at
+                    > *self
+                        .last_updated_at
+                        .entry(name.clone())
+                        .or_insert(updated_at);
 
-            // always set the latest known update time for the site
-            self.last_updated_at.insert(site.clone(), updated_at);
+                // always set the latest known update time for the site
+                self.last_updated_at.insert(id.clone(), updated_at);
+                updated_recently
+            } else {
+                false
+            };
 
             // if the site is newly available *or* if the appointment times for the site
             // have been updated recently
             if newly_available || updated_recently {
                 let lines = vec![
-                    format!(
-                        "{updated_at} {area:?}: appointments available!",
-                        updated_at = updated_at,
-                        area = area,
-                    ),
+                    format!("{area:?}: appointments available!", area = area,),
                     "".into(), // these empty strings are adding one more newline in between sections
-                    format!("Site: {}", &site),
+                    format!("Site: {}", &name),
                     "".into(),
                     format!("Area: {:?}", area),
                     format!("Sched: {}", self.get_short_url(&url.to_string()).await?),
-                    format!("Map: {}", self.get_maps_short_url(&site).await?),
+                    format!(
+                        "Map: {}",
+                        self.get_maps_short_url(&formatted_address.unwrap_or(name))
+                            .await?
+                    ),
                     "".into(),
                 ]
                 .into_iter()
@@ -164,11 +182,16 @@ impl Client {
                 .chain(vec![
                     "".into(),
                     format!("Appts Remaining: {}", appointments.count),
-                    format!("Last Updated: {}", updated_at),
+                    format!(
+                        "Last Updated: {}",
+                        updated_at
+                            .map(|at| at.to_string())
+                            .unwrap_or_else(|| "unknown".into())
+                    ),
                 ])
                 .collect::<Vec<_>>();
 
-                self.was_available.insert(site.clone());
+                self.was_available.insert(id.clone());
 
                 if site_matches_filter_pattern {
                     let (header, footer) = format_header_footer(&lines)?;
@@ -185,12 +208,11 @@ impl Client {
                     }
                 }
             }
-        } else if self.was_available.remove(&site) && site_matches_filter_pattern {
+        } else if self.was_available.remove(&id) && site_matches_filter_pattern {
             let message = format!(
-                "{updated_at} {area:?}: {site} appts no longer available",
-                updated_at = updated_at,
+                "{area:?}: {site} appts no longer available",
                 area = area,
-                site = site,
+                site = name,
             );
             warn!(message = message.as_str());
 

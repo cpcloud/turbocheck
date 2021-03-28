@@ -59,6 +59,31 @@ where
     )
 }
 
+/// Metadata about a given vaccine portal.
+#[derive(serde::Deserialize, Clone)]
+pub(crate) struct PortalMetadata {
+    /// Notes about the portal.
+    pub(crate) notes: String,
+
+    /// Portal metadata URL.
+    pub(crate) url: Url,
+}
+
+#[derive(
+    Debug,
+    serde::Deserialize,
+    strum_macros::EnumString,
+    strum_macros::EnumVariantNames,
+    enumset::EnumSetType,
+)]
+#[strum(serialize_all = "kebab_case")]
+#[serde(rename_all(deserialize = "lowercase"))]
+pub(crate) enum PortalType {
+    Government,
+    Clinic,
+    Pharmacy,
+}
+
 /// Vaccine appointment portal information.
 #[derive(serde::Deserialize, Clone)]
 pub(crate) struct Portal {
@@ -73,47 +98,51 @@ pub(crate) struct Portal {
 
     /// The URL people can use to get an appointment.
     pub(crate) url: Url,
+
+    /// Whether to show the name in the displayed card.
+    #[serde(rename(deserialize = "show_name_in_card"))]
+    pub(crate) _show_name_in_card: bool,
+
+    #[serde(rename(deserialize = "type"))]
+    pub(crate) r#type: PortalType,
+
+    pub(crate) metadata: Option<PortalMetadata>,
 }
 
 /// Vaccine location information.
 #[derive(serde::Deserialize)]
 pub(crate) struct Location {
+    /// The unique id of the vaccination site.
+    pub(crate) id: String,
+
     /// The name of the vaccination site.
-    #[serde(rename(deserialize = "name"))]
-    pub(crate) site: String,
+    pub(crate) name: String,
 
     /// Whether or not the site is currently active.
-    #[serde(rename(deserialize = "active"))]
-    pub(crate) currently_giving_vaccinations: bool,
+    pub(crate) active: bool,
 
     /// Whether or not any appointments are available at all.
-    #[serde(rename(deserialize = "available"))]
-    pub(crate) has_appointments: bool,
+    pub(crate) available: Option<bool>,
 
     /// The last time the site was updated, in local time.
-    pub(crate) updated_at: DateTime<Local>,
+    pub(crate) updated_at: Option<DateTime<Local>>,
 
     /// When information was last available.
     #[serde(rename(deserialize = "last_available_at"))]
-    pub(crate) _last_available_at: DateTime<Local>,
-
-    /// Human readable portal name.
-    #[serde(rename(deserialize = "portal_name"))]
-    pub(crate) _portal_name: String,
+    pub(crate) _last_available_at: Option<DateTime<Local>>,
 
     /// Portal key.
     #[serde(rename(deserialize = "portal"))]
-    pub(crate) portal_key: String,
+    pub(crate) portal: String,
 
     /// The borough/New York State area in which appointments are available.
     pub(crate) area: Area,
 
+    /// The address of the site.
+    pub(crate) formatted_address: Option<String>,
+
     /// Information about available appointments.
     pub(crate) appointments: Appointments,
-
-    /// URL containing more information
-    #[serde(rename(deserialize = "info_url"))]
-    pub(crate) _info_url: Option<Url>,
 }
 
 /// Aggregate portal + location information.
@@ -124,4 +153,7 @@ pub(crate) struct Dashboard {
 
     /// Sequence of locations.
     pub(crate) locations: Vec<Location>,
+
+    #[serde(rename(deserialize = "last_updated_at"))]
+    pub(crate) _last_updated_at: DateTime<Local>,
 }

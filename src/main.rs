@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use dashboard::Area;
+use dashboard::{Area, PortalType};
 use enumset::EnumSet;
 use std::{iter::FromIterator, path::PathBuf, time::Duration};
 use structopt::StructOpt;
@@ -22,6 +22,10 @@ struct Opt {
     /// Pattern of text to use for searching site names. Not specifying this argument results in all sites being displayed.
     #[structopt(short, long)]
     site_filter: Option<regex::Regex>,
+
+    /// The type of location to filter for.
+    #[structopt(short, long, possible_values = PortalType::VARIANTS)]
+    location_type: Vec<PortalType>,
 
     /// Optional Twilio configuration. If this argument isn't provided, then text messaging functionality will be disabled.
     #[structopt(short, long)]
@@ -58,6 +62,7 @@ async fn main() -> Result<()> {
         duration_between_requests,
         log_filter,
         data_url,
+        location_type,
     } = Opt::from_args();
 
     tracing::subscriber::set_global_default(
@@ -74,6 +79,12 @@ async fn main() -> Result<()> {
         EnumSet::from_iter(area.into_iter())
     };
 
+    let location_types = if location_type.is_empty() {
+        EnumSet::all()
+    } else {
+        EnumSet::from_iter(location_type.into_iter())
+    };
+
     info!(
         message = "searching",
         ?areas,
@@ -87,6 +98,7 @@ async fn main() -> Result<()> {
         .client(request_client.clone())
         .data_url(data_url)
         .areas(areas)
+        .location_types(location_types)
         .site_filter(site_filter)
         .twilio_client(if let Some(twilio_config) = twilio_config {
             Some(
