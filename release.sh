@@ -3,7 +3,11 @@
 
 set -euxo pipefail
 
-cargo release patch
+cargo release "${1:-minor}"
+
+if [ "$#" -gt 1 ]; then
+  shift 1
+fi
 
 tag="$(yj -tj < Cargo.toml | jq '.package.version' -rcM)"
 gh release create "$tag" --target "$(git rev-parse HEAD)" -t "Release $tag" "$@"
