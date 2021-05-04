@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use dashboard::{Area, PortalType};
 use enumset::EnumSet;
-use std::{iter::FromIterator, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 use structopt::StructOpt;
 use strum::VariantNames;
 use tokio::signal::unix;
@@ -77,13 +77,13 @@ async fn main() -> Result<()> {
     let areas = if area.is_empty() {
         EnumSet::all()
     } else {
-        EnumSet::from_iter(area.into_iter())
+        area.into_iter().collect()
     };
 
     let location_types = if location_type.is_empty() {
         EnumSet::all()
     } else {
-        EnumSet::from_iter(location_type.into_iter())
+        location_type.into_iter().collect()
     };
 
     info!(
