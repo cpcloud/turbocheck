@@ -4,16 +4,16 @@ in
 pkgs.mkShell {
   name = "turbocheck";
   buildInputs = with pkgs; [
-    rustToolchain
     cargo-bloat
     cargo-edit
-    cargo-udeps
     cargo-release
+    cargo-udeps
+    gh
+    jq
     niv
     openssl
     pkg-config
-    jq
+    rustToolchain
     yj
-    gh
   ];
 }
