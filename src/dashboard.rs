@@ -63,16 +63,6 @@ where
     )
 }
 
-/// Metadata about a given vaccine portal.
-#[derive(serde::Deserialize, Clone)]
-pub(crate) struct PortalMetadata {
-    /// Notes about the portal.
-    pub(crate) notes: String,
-
-    /// Portal metadata URL.
-    pub(crate) url: Url,
-}
-
 #[derive(
     Debug,
     serde::Deserialize,
@@ -109,8 +99,6 @@ pub(crate) struct Portal {
 
     #[serde(rename(deserialize = "type"))]
     pub(crate) r#type: PortalType,
-
-    pub(crate) metadata: Option<PortalMetadata>,
 }
 
 /// Vaccine location information.
