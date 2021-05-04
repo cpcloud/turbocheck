@@ -32,6 +32,8 @@ pub(crate) enum Area {
 
     #[serde(rename(deserialize = "Mid-Hudson"))]
     MidHudson,
+
+    Unknown,
 }
 
 /// Appointment summary information.
@@ -138,6 +140,7 @@ pub(crate) struct Location {
     pub(crate) portal: String,
 
     /// The borough/New York State area in which appointments are available.
+    #[serde(deserialize_with = "deserialize_area")]
     pub(crate) area: Area,
 
     /// The address of the site.
@@ -145,6 +148,13 @@ pub(crate) struct Location {
 
     /// Information about available appointments.
     pub(crate) appointments: Appointments,
+}
+
+fn deserialize_area<'de, D>(deserializer: D) -> Result<Area, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    Ok(Option::deserialize(deserializer)?.unwrap_or(Area::Unknown))
 }
 
 /// Aggregate portal + location information.
