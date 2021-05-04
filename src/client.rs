@@ -159,7 +159,7 @@ impl Client {
             // have been updated recently
             if newly_available || updated_recently {
                 let lines = vec![
-                    format!("{area:?}: appointments available!", area = area,),
+                    format!("{area:?}: appointments available!", area = area),
                     "".into(), // these empty strings are adding one more newline in between sections
                     format!("Site: {}", &name),
                     "".into(),
