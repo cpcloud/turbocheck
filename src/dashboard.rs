@@ -37,7 +37,7 @@ pub(crate) enum Area {
 }
 
 /// Appointment summary information.
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub(crate) struct Appointments {
     /// Number of available appointments.
     pub(crate) count: usize,
@@ -89,7 +89,7 @@ pub(crate) enum PortalType {
 }
 
 /// Vaccine appointment portal information.
-#[derive(serde::Deserialize, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub(crate) struct Portal {
     /// Full name of the portal.
     pub(crate) name: String,
@@ -114,7 +114,7 @@ pub(crate) struct Portal {
 }
 
 /// Vaccine location information.
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub(crate) struct Location {
     /// The unique id of the vaccination site.
     pub(crate) id: String,
@@ -158,7 +158,7 @@ where
 }
 
 /// Aggregate portal + location information.
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub(crate) struct Dashboard {
     /// Sequence of portals containing information about where (on the internet) to schedule an appointment.
     pub(crate) portals: Vec<Portal>,
