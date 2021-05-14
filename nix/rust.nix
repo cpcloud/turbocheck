@@ -1,5 +1,5 @@
 self: super: {
-  inherit (self.rust-nightly.latest)
+  inherit (self.fenix.latest)
     rustc
     cargo
     clippy-preview
@@ -9,7 +9,7 @@ self: super: {
     rust-std
     rust-src;
 
-  rustToolchain = self.rust-nightly.latest.withComponents [
+  rustToolchain = self.fenix.latest.withComponents [
     "rustc"
     "cargo"
     "clippy-preview"
