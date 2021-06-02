@@ -157,18 +157,3 @@ pub(crate) struct Dashboard {
     #[serde(rename(deserialize = "last_updated_at"))]
     pub(crate) _last_updated_at: DateTime<Local>,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{Dashboard, DEFAULT_DATA_URL};
-    use anyhow::Result;
-
-    #[tokio::test]
-    async fn test_data_model() -> Result<()> {
-        reqwest::get(DEFAULT_DATA_URL)
-            .await?
-            .json::<Dashboard>()
-            .await?;
-        Ok(())
-    }
-}
