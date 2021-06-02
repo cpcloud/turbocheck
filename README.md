@@ -2,7 +2,7 @@
 
 ## UPDATE as of June 2nd, 2021
 
-**`turbocheck` is no longer developed due to its primary data source, https://turbovax.info,
+**`turbocheck` is no longer developed due to its data source, https://turbovax.info,
 shutting down.**
 
 ## What is this?
