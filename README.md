@@ -1,5 +1,10 @@
 # `turbocheck`
 
+## UPDATE as of June 2nd, 2021
+
+**`turbocheck` is no longer developed due to its primary data source, `turbovax.info`,
+shutting down.**
+
 ## What is this?
 
 `turbocheck` is a command line tool for continuously monitoring COVID-19
